@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import shutil
@@ -11,7 +12,6 @@ from random import randint
 from typing import Any, Optional
 
 import userpaths
-from colorama import init
 
 from liblogger import log_err, log_inf
 from libwebsocket import WebSocketServer
@@ -144,6 +144,19 @@ class Chrome:
         else:
             log_err("chrome.exe not found")
 
+    def quit(self):
+        if self.__process != None:
+            self.__process.terminate()
+            self.__process = None
+
+        if self.__client_unit != None:
+            self.__client_unit.close()
+            self.__client_unit = None
+
+        self.__width = 0
+        self.__height = 0
+        self.__block_image = True
+
     def run_script(self, script: str) -> Optional[str]:
         return self.__send_command("runScript", script)
 
@@ -249,28 +262,29 @@ selectors;"""
         else:
             return None
 
-    def quit(self):
-        if self.__process != None:
-            self.__process.terminate()
-            self.__process = None
+    def set_value(self, selector: str, value: str):
+        b64value = base64.b64encode(value.encode()).decode()
+        self.run_script(f"document.querySelector('{selector}').value=atob('{b64value}')")
 
-        if self.__client_unit != None:
-            self.__client_unit.close()
-            self.__client_unit = None
-
-        self.__width = 0
-        self.__height = 0
-        self.__block_image = True
+    def click(self, selector: str):
+        self.run_script(f"document.querySelector('{selector}').click()")
 
 
 if __name__ == "__main__":
-    chrome = Chrome(init_url="https://google.com")
+    chrome = Chrome(user_data_dir=os.path.join(TEMP_DIR, "profile"))
     chrome.start()
-    for i in range(60):
-        time.sleep(1)
-        print(chrome.run_script("location.href"))
+
+    chrome.goto(url2go="https://google.com", wait_elem_selector="#APjFqb")
+    log_inf(str(chrome.url()))
+
+    chrome.set_value(selector="#APjFqb", value="chrome")
+    chrome.click(selector="[name=btnK]")
+
+    log_inf("before clear cookie")
+    log_inf(chrome.cookie("google.com"))
     chrome.clear_cookie()
-    for i in range(300):
-        time.sleep(1)
-        print(".", end="")
+    log_inf("after clear cookie")
+    log_inf(chrome.cookie("google.com"))
+
+    input("Press ENTER to exit.")
     chrome.quit()
