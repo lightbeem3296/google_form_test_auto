@@ -1,119 +1,134 @@
-# crawler.py --shuffle_name=ekudahl --telegram_name=ekudahl
-
-import argparse
 import base64
 import os
+import re
+import time
 import traceback
-from hashlib import md5
 from pathlib import Path
 
+from pyrogram import filters
+from pyrogram.client import Client
+
 from libchrome import Chrome
-from liblogger import log_inf
+from liblogger import log_err, log_inf
+
+API_ID = 20992264
+API_HASH = "8506019a33a5f425e40fd9d119c511a8"
+TELEGRAM_APP = Client("my_account", API_ID, API_HASH)
+
 
 CUR_DIR = str(Path(__file__).parent.absolute())
 TEMP_DIR = os.path.join(CUR_DIR, "temp")
+CHROME: Chrome
 
 
-def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegram_name: str):
+@TELEGRAM_APP.on_message(filters.text)
+async def hello(client, message):
+    if message.chat.title == "ALDOMİLYAR VIP":
+        if "forms.gle" in message.text:
+            urls = re.findall(r"(https?://\S+)", message.text)
+            print(message.text, urls)
+
+            for url in urls:
+                if not "forms.gle" in url:
+                    continue
+
+                submit_google_form_test(
+                    url=url,
+                    shuffle_name=message.from_user.username,
+                    telegram_name=message.from_user.username,
+                )
+        else:
+            log_err(f"{message.from_user.username}: {message.text}")
+
+
+def init_chrome() -> Chrome:
+    log_inf("open chrome browser")
+    chrome = Chrome(user_data_dir=os.path.join(TEMP_DIR, "profile"))
+    chrome.start()
+
+    # login google account
+    chrome.goto(
+        url2go="https://accounts.google.com/",
+        wait_timeout=300,
+        wait_elem_selector="h1.XY0ASe",
+    )
+
+    return chrome
+
+
+def submit_google_form_test(url: str, shuffle_name: str, telegram_name: str):
     try:
         # go to google form test url and wait until title "Google Form Test" is selecable
         log_inf("open google form test url")
-        chrome.goto(url2go=url, wait_elem_selector="div.F9yp7e.ikZYwf.LgNcQe")
+        CHROME.goto(url2go=url, wait_elem_selector="div.F9yp7e.ikZYwf.LgNcQe")
 
         # click check box
-        chrome.click(selector="label.docssharedWizToggleLabeledContainer.OLkl6c")
+        CHROME.click(selector="label.docssharedWizToggleLabeledContainer.OLkl6c")
 
         # input shuffle name
         b64_shuffle_name = base64.b64encode(shuffle_name.encode()).decode()
-        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[0].value=atob('{b64_shuffle_name}')")
-        chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[0].innerText=''")
+        CHROME.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[0].value=atob('{b64_shuffle_name}')")
+        CHROME.run_script("document.querySelectorAll('div.ndJi5d.snByac')[0].innerText=''")
 
         # input telegram name
         b64_telegram_name = base64.b64encode(telegram_name.encode()).decode()
-        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[1].value=atob('{b64_telegram_name}')")
-        chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[1].innerText=''")
+        CHROME.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[1].value=atob('{b64_telegram_name}')")
+        CHROME.run_script("document.querySelectorAll('div.ndJi5d.snByac')[1].innerText=''")
 
         # input captcha
-        math_eq = chrome.run_script(
+        math_eq = CHROME.run_script(
             """
 elems = document.querySelectorAll('span.M7eMe');
 elem = elems[elems.length - 1];
 elem.innerText"""
         )
         if math_eq != None:
-            math_eq = math_eq.replace("x", "*")
-            eq_res = str(eval(math_eq))
-            b64_captcha = base64.b64encode(eq_res.encode()).decode()
-            chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].value=atob('{b64_captcha}')")
-            chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[2].innerText=''")
+            log_inf(f"equation: {math_eq}")
 
+            math_eq = math_eq.replace("x", "*")
+            log_inf(f"parsed: {math_eq}")
+
+            eq_res = str(eval(math_eq))
+            log_inf(f"result: {eq_res}")
+
+            b64_captcha = base64.b64encode(eq_res.encode()).decode()
+            CHROME.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].value=atob('{b64_captcha}')")
+            CHROME.run_script("document.querySelectorAll('div.ndJi5d.snByac')[2].innerText=''")
+
+        time.sleep(0.5)
         # click submit button
-        chrome.run_script("document.querySelectorAll('span.NPEfkd.RveJvd.snByac')[0].click()")
+        CHROME.run_script("document.querySelectorAll('span.NPEfkd.RveJvd.snByac')[0].click()")
     except:
         traceback.print_exc()
 
 
-def work(url: str, shuffle_name: str, telegram_name: str):
+def work():
+    global CHROME
     try:
         # open chrome browser
-        log_inf("open chrome browser")
-        profile_dir_name = (
-            f"profile_{md5(shuffle_name.encode()).hexdigest()[:8]}_{md5(telegram_name.encode()).hexdigest()[:8]}"
-        )
-        chrome = Chrome(user_data_dir=os.path.join(TEMP_DIR, profile_dir_name))
-        chrome.start()
+        CHROME = init_chrome()
 
-        # login google account
-        chrome.goto(
-            url2go="https://myaccount.google.com/",
-            wait_elem_selector="h1.XY0ASe",
-        )
+        TELEGRAM_APP.run()
 
-        # submit google form test
-        submit_google_form_test(
-            chrome=chrome,
-            url=url,
-            shuffle_name=shuffle_name,
-            telegram_name=telegram_name,
-        )
-
-        input("Press ENTER to close browser.")
-        log_inf("quit browser")
-        chrome.quit()
+        CHROME.quit()
     except:
         traceback.print_exc()
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--shuffle_name",
-        dest="shuffle_name",
-        type=str,
-        required=True,
-        help="Shuffle name to input in Google Form Test.",
-    )
-    parser.add_argument(
-        "--telegram_name",
-        dest="telegram_name",
-        type=str,
-        required=True,
-        help="Shuffle name to input in Google Form Test.",
-    )
-    args = parser.parse_args()
-    work(
-        url="https://forms.gle/4NccFM5EcL12mdnM7",
-        shuffle_name=args.shuffle_name,
-        telegram_name=args.telegram_name,
-    )
+    work()
 
 
 def test():
-    work(
+    global CHROME
+    CHROME = init_chrome()
+    submit_google_form_test(
         url="https://forms.gle/4NccFM5EcL12mdnM7",
         shuffle_name="ekudahl",
         telegram_name="ekudahl",
     )
+    input("Press ENTER to close browser.")
+    CHROME.quit()
 
 
 if __name__ == "__main__":
