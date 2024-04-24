@@ -1,3 +1,6 @@
+# crawler.py --shuffle_name=ekudahl --telegram_name=ekudahl
+
+import argparse
 import base64
 import os
 import traceback
@@ -29,9 +32,17 @@ def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegra
         chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[1].value=atob('{b64_telegram_name}')")
 
         # input captcha
-        captcha = "kk"
-        b64_captcha = base64.b64encode(captcha.encode()).decode()
-        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].value=atob('{b64_captcha}')")
+        math_eq = chrome.run_script(
+            """
+elems = document.querySelectorAll('span.M7eMe');
+elem = elems[elems.length - 1];
+elem.innerText"""
+        )
+        if math_eq != None:
+            math_eq = math_eq.replace("x", "*")
+            eq_res = str(eval(math_eq))
+            b64_captcha = base64.b64encode(eq_res.encode()).decode()
+            chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].value=atob('{b64_captcha}')")
 
         # click submit button
         chrome.run_script("document.querySelectorAll('span.NPEfkd.RveJvd.snByac')[0].click()")
@@ -70,9 +81,37 @@ def work(shuffle_name: str, telegram_name: str):
 
 
 def main():
-    work(shuffle_name="ekudahl", telegram_name="ekudahl")
-    input("Press ENTER to exit.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--shuffle_name",
+        dest="shuffle_name",
+        type=str,
+        required=True,
+        help="Shuffle name to input in Google Form Test.",
+    )
+    parser.add_argument(
+        "--telegram_name",
+        dest="telegram_name",
+        type=str,
+        required=True,
+        help="Shuffle name to input in Google Form Test.",
+    )
+    args = parser.parse_args()
+    work(
+        shuffle_name=args.shuffle_name,
+        telegram_name=args.telegram_name,
+    )
+
+
+def test():
+    work(
+        shuffle_name="ekudahl",
+        telegram_name="ekudahl",
+    )
 
 
 if __name__ == "__main__":
     main()
+    # test()
+
+    input("Press ENTER to exit.")
