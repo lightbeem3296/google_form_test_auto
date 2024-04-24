@@ -26,10 +26,12 @@ def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegra
         # input shuffle name
         b64_shuffle_name = base64.b64encode(shuffle_name.encode()).decode()
         chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[0].value=atob('{b64_shuffle_name}')")
+        chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[0].innerText=''")
 
         # input telegram name
         b64_telegram_name = base64.b64encode(telegram_name.encode()).decode()
         chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[1].value=atob('{b64_telegram_name}')")
+        chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[1].innerText=''")
 
         # input captcha
         math_eq = chrome.run_script(
@@ -43,6 +45,7 @@ elem.innerText"""
             eq_res = str(eval(math_eq))
             b64_captcha = base64.b64encode(eq_res.encode()).decode()
             chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].value=atob('{b64_captcha}')")
+            chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[2].innerText=''")
 
         # click submit button
         chrome.run_script("document.querySelectorAll('span.NPEfkd.RveJvd.snByac')[0].click()")
@@ -50,9 +53,10 @@ elem.innerText"""
         traceback.print_exc()
 
 
-def work(shuffle_name: str, telegram_name: str):
+def work(url: str, shuffle_name: str, telegram_name: str):
     try:
-        log_inf("open browser")
+        # open chrome browser
+        log_inf("open chrome browser")
         profile_dir_name = (
             f"profile_{md5(shuffle_name.encode()).hexdigest()[:8]}_{md5(telegram_name.encode()).hexdigest()[:8]}"
         )
@@ -68,7 +72,7 @@ def work(shuffle_name: str, telegram_name: str):
         # submit google form test
         submit_google_form_test(
             chrome=chrome,
-            url="https://forms.gle/4NccFM5EcL12mdnM7",
+            url=url,
             shuffle_name=shuffle_name,
             telegram_name=telegram_name,
         )
@@ -98,6 +102,7 @@ def main():
     )
     args = parser.parse_args()
     work(
+        url="https://forms.gle/4NccFM5EcL12mdnM7",
         shuffle_name=args.shuffle_name,
         telegram_name=args.telegram_name,
     )
@@ -105,6 +110,7 @@ def main():
 
 def test():
     work(
+        url="https://forms.gle/4NccFM5EcL12mdnM7",
         shuffle_name="ekudahl",
         telegram_name="ekudahl",
     )
