@@ -1,13 +1,14 @@
 import base64
 import os
 import traceback
+from hashlib import md5
 from pathlib import Path
 
 from libchrome import Chrome
 from liblogger import log_inf
 
 CUR_DIR = str(Path(__file__).parent.absolute())
-PROFILE_DIR = os.path.join(CUR_DIR, "profile")
+TEMP_DIR = os.path.join(CUR_DIR, "temp")
 
 
 def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegram_name: str):
@@ -15,6 +16,9 @@ def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegra
         # go to google form test url and wait until title "Google Form Test" is selecable
         log_inf("open google form test url")
         chrome.goto(url2go=url, wait_elem_selector="div.F9yp7e.ikZYwf.LgNcQe")
+
+        # click check box
+        chrome.click(selector="label.docssharedWizToggleLabeledContainer.OLkl6c")
 
         # input shuffle name
         b64_shuffle_name = base64.b64encode(shuffle_name.encode()).decode()
@@ -35,19 +39,30 @@ def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegra
         traceback.print_exc()
 
 
-def work():
+def work(shuffle_name: str, telegram_name: str):
     try:
         log_inf("open browser")
-        chrome = Chrome(user_data_dir=PROFILE_DIR)
+        profile_dir_name = (
+            f"profile_{md5(shuffle_name.encode()).hexdigest()[:8]}_{md5(telegram_name.encode()).hexdigest()[:8]}"
+        )
+        chrome = Chrome(user_data_dir=os.path.join(TEMP_DIR, profile_dir_name))
         chrome.start()
 
+        # login google account
+        chrome.goto(
+            url2go="https://myaccount.google.com/",
+            wait_elem_selector="h1.XY0ASe",
+        )
+
+        # submit google form test
         submit_google_form_test(
             chrome=chrome,
             url="https://forms.gle/4NccFM5EcL12mdnM7",
-            shuffle_name="ekudahl",
-            telegram_name="ekudahl",
+            shuffle_name=shuffle_name,
+            telegram_name=telegram_name,
         )
 
+        input("Press ENTER to close browser.")
         log_inf("quit browser")
         chrome.quit()
     except:
@@ -55,7 +70,7 @@ def work():
 
 
 def main():
-    work()
+    work(shuffle_name="ekudahl", telegram_name="ekudahl")
     input("Press ENTER to exit.")
 
 
