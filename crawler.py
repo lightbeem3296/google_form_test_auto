@@ -63,7 +63,8 @@ def submit_google_form_test(url: str, shuffle_name: str, telegram_name: str):
         CHROME.goto(url2go=url, wait_elem_selector="div.F9yp7e.ikZYwf.LgNcQe")
 
         # click check box
-        CHROME.click(selector="label.docssharedWizToggleLabeledContainer.OLkl6c")
+        if CHROME.run_script("document.querySelector('#i5').getAttribute('aria-checked')") == "false":
+            CHROME.click(selector="label.docssharedWizToggleLabeledContainer.OLkl6c")
 
         # input shuffle name
         b64_shuffle_name = base64.b64encode(shuffle_name.encode()).decode()
@@ -84,9 +85,7 @@ elem.innerText"""
         )
         if math_eq != None:
             log_inf(f"equation: {math_eq}")
-
             math_eq = math_eq.replace("x", "*")
-            log_inf(f"parsed: {math_eq}")
 
             eq_res = str(eval(math_eq))
             log_inf(f"result: {eq_res}")
