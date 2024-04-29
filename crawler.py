@@ -15,12 +15,12 @@ ACCOUNT_LIST = {
     "alpha0@gmail.com": {
         "name": "alpha0",
     },
-    "alpha1@gmail.com": {
-        "name": "alpha1",
-    },
-    "alpha2@gmail.com": {
-        "name": "alpha2",
-    },
+    # "alpha1@gmail.com": {
+    #     "name": "alpha1",
+    # },
+    # "alpha2@gmail.com": {
+    #     "name": "alpha2",
+    # },
 }
 
 API_ID = 20992264
@@ -85,31 +85,40 @@ def submit_google_form_test(chrome: Chrome, url: str, shuffle_name: str, telegra
 
         # input shuffle name
         b64_shuffle_name = base64.b64encode(shuffle_name.encode()).decode()
-        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[0].value=atob('{b64_shuffle_name}')")
-        chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[0].innerText=''")
+        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[0].focus()")
+        chrome.run_script(f"document.execCommand('selectAll', false, null)")
+        chrome.run_script(f"document.execCommand('delete', false, null)")
+        chrome.run_script(f"document.execCommand('insertText', false, atob('{b64_shuffle_name}'))")
 
         # input telegram name
         b64_telegram_name = base64.b64encode(telegram_name.encode()).decode()
-        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[1].value=atob('{b64_telegram_name}')")
-        chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[1].innerText=''")
+        chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[1].focus()")
+        chrome.run_script(f"document.execCommand('selectAll', false, null)")
+        chrome.run_script(f"document.execCommand('delete', false, null)")
+        chrome.run_script(f"document.execCommand('insertText', false, atob('{b64_telegram_name}'))")
 
         # input captcha
         math_eq = chrome.run_script(
             """
 elems = document.querySelectorAll('span.M7eMe');
-elem = elems[elems.length - 1];
+elem = elems[3];
 elem.innerText"""
         )
         if math_eq != None:
-            log_inf(f"equation: {math_eq}")
-            math_eq = math_eq.replace("x", "*")
+            try:
+                log_inf(f"equation: {math_eq}")
+                math_eq = math_eq.replace("x", "*")
 
-            eq_res = str(eval(math_eq))
-            log_inf(f"result: {eq_res}")
+                eq_res = str(eval(math_eq))
+                log_inf(f"result: {eq_res}")
 
-            b64_eq_res = base64.b64encode(eq_res.encode()).decode()
-            chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].value=atob('{b64_eq_res}')")
-            chrome.run_script("document.querySelectorAll('div.ndJi5d.snByac')[2].innerText=''")
+                b64_eq_res = base64.b64encode(eq_res.encode()).decode()
+                chrome.run_script(f"document.querySelectorAll('input.whsOnd.zHQkBf')[2].focus()")
+                chrome.run_script(f"document.execCommand('selectAll', false, null)")
+                chrome.run_script(f"document.execCommand('delete', false, null)")
+                chrome.run_script(f"document.execCommand('insertText', false, atob('{b64_eq_res}'))")
+            except:
+                traceback.print_exc()
 
         time.sleep(0.5)
         # click submit button
@@ -146,7 +155,7 @@ def test():
         CHROME_LIST[key] = chrome
 
     submit_all(url="https://forms.gle/4NccFM5EcL12mdnM7")
-    submit_all(url="https://forms.gle/4NccFM5EcL12mdnM7")
+    submit_all(url="https://forms.gle/mezzfQ8BcbfnpgJR6")
 
     input("Press ENTER to close browser.")
 
@@ -156,7 +165,7 @@ def test():
 
 
 if __name__ == "__main__":
-    main()
-    # test()
+    # main()
+    test()
 
     input("Press ENTER to exit.")
